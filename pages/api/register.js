@@ -1,5 +1,7 @@
 import { hashSync } from 'bcrypt';
-import { connect } from '/db';
+import con from '../../db'
+
+import db from '/db';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -8,19 +10,34 @@ export default async function handler(req, res) {
 
   const { firstName, lastName, email, password } = req.body;
 
+  console.log({firstName, lastName, email});
+
   const hashedPassword = hashSync(password, 10);
 
-  try {
-    const connection = await connect();
+  console.log({hashedPassword})
 
-    await connection.execute(
-      'INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)',
+  try {
+    // const connection = await con();
+
+    // if (!connection) {
+    //   console.log("here")
+    //   return res.status(500).json({ message: 'Database connection error' });
+    // }
+
+    const result = await db.promise().execute(
+      'INSERT INTO user (firstName, lastName, email, passwordHash) VALUES (?, ?, ?, ?)',
       [firstName, lastName, email, hashedPassword]
     );
 
-    connection.end();
+    // connection.end();
 
-    return res.status(201).json({ message: 'User registered successfully' });
+    console.log({result})
+
+    if (result.affectedRows > 0) {
+      return res.status(201).json({ message: 'User registered successfully' });
+    } else {
+      return res.status(500).json({ message: 'User registration failed' });
+    }
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'An error occurred' });
